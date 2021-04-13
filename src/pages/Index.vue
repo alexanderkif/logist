@@ -204,9 +204,12 @@ export default {
         }
       }
       way.sum = this.getWayBoxes(way);
-      if (way.sum > 0) {
-        console.log(`Car M way = ${way.id} loaded ${way.sum} boxes`);
-      }
+      // if (way.sum > 0) {
+      //   console.log(`Car M way = ${way.id} loaded ${way.sum} boxes`);
+      // }
+
+      way = this.getSequenceTT(way);
+
       return way;
     },
     loadWayP(dayOrders, currWay) {
@@ -227,7 +230,6 @@ export default {
         }
         currPos++;
       }
-      // console.log('sum', sum);
 
       // добираем Н в цикле целые, после делим сколько влезет
       // console.log('way.orders', way.orders);
@@ -246,14 +248,55 @@ export default {
       }
 
       way.sum = this.getWayBoxes(way);
-      if (way.sum > 0) {
-        console.log(`Car P way = ${way.id} loaded ${way.sum} boxes`);
-      }
+      // if (way.sum > 0) {
+      //   console.log(`Car P way = ${way.id} loaded ${way.sum} boxes`);
+      // }
+
+      way = this.getSequenceTT(way);
       
       return way;
     },
+    getSequenceTT(way) {
+      const wayShops = way.orders.map(o => o.ttId);
+      // console.log('wayShops', wayShops);
+      if (!wayShops.length) return '0';
+      const seqs = this.getNextTT("0", wayShops);
+      // console.log('seqs', seqs);
+      // const way1 = {};
+      way.seq = seqs.sort((a, b) => {
+        if (+a.split('km')[1] > +b.split('km')[1]) return 1
+        else return -1
+      });
+      way.bestSeq = way.seq[0].split('km')[0];
+      way.bestSeqKM = way.seq[0].split('km')[1];
+      const tts = way.bestSeq.split('-').length;
+      way.time = +way.bestSeqKM*3 + +way.sum*0.5 + (tts - 2)*15;
+      return way;
+    },
+    getNextTT(str, wayShops) {
+      if (wayShops.length < 2) {
+        const newStr = `${str}-${wayShops[0]}-0`;
+        return [`${newStr}km${this.getKM(newStr)}`];
+      }
+      let seqs = [];
+      wayShops.forEach(el => {
+        seqs = [ ...seqs, ...this.getNextTT(`${str}-${el}`, wayShops.filter(ws => ws !== el))];
+      });
+      return seqs;
+    },
+    getKM(str) {
+      const arrTT = str.split('-');
+      let km = 0;
+      for (let i = 0; i < arrTT.length - 1; i++) {
+        const tt1 = this.shops.filter(sh => sh.ttId === arrTT[i])[0];
+        const tt2 = this.shops.filter(sh => sh.ttId === arrTT[i + 1])[0];
+        km += Math.abs(+tt1.x - +tt2.x) + Math.abs(+tt1.y - +tt2.y);
+        // console.log('tt1, tt2, km', tt1, tt2, km);
+      }
+      return km;
+    },
     getWayBoxes(way) {
-      return way.orders.length ? way.orders.map(el => (el.p?el.p:0) + (el.n?el.n:0) + (el.m?el.m:0))
+      return way.orders && way.orders.length ? way.orders.map(el => (el.p?el.p:0) + (el.n?el.n:0) + (el.m?el.m:0))
         .reduce((acc, curr) => {return acc + curr}) : 0;
     },
     getCountBoxes(dayOrders) {

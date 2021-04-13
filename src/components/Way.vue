@@ -19,8 +19,19 @@
         Результаты расчета по маршруту
       </div>
       <div class="row">
+        Путь объезда магазинов по маршруту<br />
+        {{ `M = ${way.bestSeq}` }}
+      </div>
+      <div class="row">
         Количество перевезенного груза<br />
         {{ `P = ${way.sum}` }}
+      </div>
+      <div class="row">
+        {{ `Длина маршрута L = ${way.bestSeqKM} км` }}
+      </div>
+      <div class="row">
+        Время работы машины на маршруте<br />
+        {{ `T = ${way.bestSeqKM}*3 + ${way.sum}*0.5 + ${way.bestSeq.split('-').length - 2}*15 = ${way.time} мин` }}
       </div>
     </q-card-section>
   </q-card>
