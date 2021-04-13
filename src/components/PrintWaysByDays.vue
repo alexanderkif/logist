@@ -31,7 +31,18 @@ export default {
     week: Array
   },
   data() {
-    return {
+    return {}
+  },
+  updated() {
+    if (this.week.length < 5) return;
+    for (let day = 0; day < 5; day++) {
+      const wayByTime = this.getWaysByDaySortByTime(day);
+      console.log('wayByTime', wayByTime.map(w => w.time));
+    }
+  },
+  methods: {
+    getWaysByDaySortByTime(day) {
+      return this.week ? this.week[day].cars.slice(0).sort((a, b) => { return +b.time - +a.time }) : [];
     }
   },
 }

@@ -263,12 +263,12 @@ export default {
       const seqs = this.getNextTT("0", wayShops);
       // console.log('seqs', seqs);
       // const way1 = {};
-      way.seq = seqs.sort((a, b) => {
+      const seq = seqs.sort((a, b) => {
         if (+a.split('km')[1] > +b.split('km')[1]) return 1
         else return -1
       });
-      way.bestSeq = way.seq[0].split('km')[0];
-      way.bestSeqKM = way.seq[0].split('km')[1];
+      way.bestSeq = seq[0].split('km')[0];
+      way.bestSeqKM = seq[0].split('km')[1];
       const tts = way.bestSeq.split('-').length;
       way.time = +way.bestSeqKM*3 + +way.sum*0.5 + (tts - 2)*15;
       return way;
