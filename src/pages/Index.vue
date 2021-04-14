@@ -147,7 +147,7 @@ export default {
 
       await this.setShops();
       await this.setOrders();
-      for (let day of ['mon','tue','wed','thu','fri']) {
+      for (let day of ['понедельник','вторник','среда','четверг','пятница']) {
         this.week.push({ day: day, cars: await this.loadWaysByDays(day)});
       };
 
@@ -330,15 +330,15 @@ export default {
     },
     getDayOrders(day) {
       switch (day) {
-        case 'mon':
+        case 'понедельник':
           return this.orders.map(el => { return {ttId: el.ttId, p: el.mon.p, m: el.mon.m, n: el.mon.n}});
-        case 'tue':
+        case 'вторник':
           return this.orders.map(el => { return {ttId: el.ttId, p: el.tue.p, m: el.tue.m, n: el.tue.n}});
-        case 'wed':
+        case 'среда':
           return this.orders.map(el => { return {ttId: el.ttId, p: el.wed.p, m: el.wed.m, n: el.wed.n}});
-        case 'thu':
+        case 'четверг':
           return this.orders.map(el => { return {ttId: el.ttId, p: el.thu.p, m: el.thu.m, n: el.thu.n}});
-        case 'fri':
+        case 'пятница':
           return this.orders.map(el => { return {ttId: el.ttId, p: el.fri.p, m: el.fri.m, n: el.fri.n}});
       
         default:
