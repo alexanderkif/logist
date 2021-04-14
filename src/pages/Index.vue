@@ -88,12 +88,13 @@
         </template>
       </q-table>
     </div>
-    <PrintWaysByDays :week="week" />
+    <PrintWaysByDays :week="week" v-if="weekCounted" />
   </q-page>
 </template>
 
 <script>
 import PrintWaysByDays from 'components/PrintWaysByDays';
+const SKIP_TT = 9;
 
 export default {
   name: 'PageIndex',
@@ -107,6 +108,7 @@ export default {
       shops: [],
       orders: [],
       week: [],
+      weekCounted: false,
       TT: 30,
       shopColumns: [
         { name: 'ttId', align: 'center', label: 'Магазин', field: 'ttId', sortable: true,
@@ -150,6 +152,7 @@ export default {
       };
 
       console.log('this.week', this.week);
+      this.weekCounted = true;
     },
     async loadWaysByDays(day) {
       let dayOrders = await this.getDayOrders(day);
@@ -191,7 +194,7 @@ export default {
       for (let i = 0; i < dayOrders.length; i++) {
         if (+dayOrders[i].m + +dayOrders[i].n > 0
           && sum + +dayOrders[i].m + +dayOrders[i].n <= 120
-          && (i - lastTT < 9 || lastTT === 0)) {
+          && (i - lastTT < SKIP_TT || lastTT === 0)) {
             let order = { ttId: i + 1 };
             if (+dayOrders[i].m > 0) order.m = +dayOrders[i].m;
             if (+dayOrders[i].n > 0) order.n = +dayOrders[i].n;

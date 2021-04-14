@@ -2,7 +2,7 @@
   "name": "logist",
   "version": "0.0.1",
   "description": "A Quasar Framework app",
-  "productName": "Quasar App",
+  "productName": "Logist",
   "author": "alexanderkif <alexander_kif@mail.ru>",
   "private": true,
   "scripts": {
