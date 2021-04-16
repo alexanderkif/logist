@@ -1,18 +1,33 @@
 <template>
   <q-page class="flex flex-center q-pb-lg">
     <div class="row justify-center items-center q-mt-lg">
-      <div class="col col-auto">
-        <a href="logist.csv" class="text-primary">Скачать пример файла logist.csv</a>
-      </div>
       <div class="col">
+        <q-input
+          outlined
+          style="min-width: 200px"
+          v-model="MAX_TIME"
+          label="Макс. время работы водителя (мин)"
+        />
+      </div>
+      <div class="col q-pl-md">
+        <q-input
+          outlined
+          style="min-width: 200px"
+          v-model="SKIP_TT"
+          label="Сколько ТТ можно пропустить"
+        />
+      </div>
+      <div class="col q-pl-md">
         <q-file
           v-model="file"
           label="Загрузить CSV файл"
           outlined
-          style="width: 300px"
+          style="min-width: 200px"
           @input="input"
-          class="q-ml-lg"
         />
+      </div>
+      <div class="col q-pl-md">
+        <a href="logist.csv" class="text-primary">Скачать пример файла logist.csv</a>
       </div>
     </div>
     <div class="row full-width justify-center">
@@ -88,13 +103,13 @@
         </template>
       </q-table>
     </div>
-    <PrintWaysByDays :week="week" v-if="weekCounted" />
+    <PrintWaysByDays :week="week" :MAX_TIME="+MAX_TIME" v-if="weekCounted" />
   </q-page>
 </template>
 
 <script>
 import PrintWaysByDays from 'components/PrintWaysByDays';
-const SKIP_TT = 9;
+// const SKIP_TT = 9;
 
 export default {
   name: 'PageIndex',
@@ -103,6 +118,8 @@ export default {
   },
   data () {
     return {
+      SKIP_TT: 9,
+      MAX_TIME: 605,
       file: null,
       textFile: null,
       shops: [],
@@ -194,7 +211,7 @@ export default {
       for (let i = 0; i < dayOrders.length; i++) {
         if (+dayOrders[i].m + +dayOrders[i].n > 0
           && sum + +dayOrders[i].m + +dayOrders[i].n <= 120
-          && (i - lastTT < SKIP_TT || lastTT === 0)) {
+          && (i - lastTT < +this.SKIP_TT || lastTT === 0)) {
             let order = { ttId: i + 1 };
             if (+dayOrders[i].m > 0) order.m = +dayOrders[i].m;
             if (+dayOrders[i].n > 0) order.n = +dayOrders[i].n;

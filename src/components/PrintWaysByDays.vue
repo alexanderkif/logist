@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="print">
     <div
       v-for="w in week"
       :key="w.day"
@@ -36,12 +36,87 @@
         </div>
       </div>
     </div>
+    <div v-if="paths && paths.length" class="row justify-center q-px-lg">
+      <div
+        v-for="day in paths"
+        :key="day.day"
+        class="q-pt-xl full-width"
+      >
+        <div class="full-width text-center text-h5 text-bold bg-purple-2 print__table-cars-label">
+          {{ week[day.day - 1].day.toUpperCase() }}
+        </div>
+        <table class="text-center print__table-cars full-width" >
+          <thead>
+            <tr>
+              <th>№ машины</th>
+              <th>Собственная<br/>наемная</th>
+              <th>Номера<br/>машрутов</th>
+              <th>Количество<br/>коробок</th>
+              <th>Количество<br/>часов</th>
+              <th>Пробег<br/>за день</th>
+              <th>Плата<br/>за пробег</th>
+              <th>Содержание<br/>авто</th>
+              <th>Сверхурочные<br/>водителя</th>
+              <th>Штраф менее<br/>90 коробок</th>
+              <th>Штраф менее<br/>6 часов</th>
+              <th>Расходы<br/>на охрану</th>
+              <th>Всего</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="car in carsByDay(day.day - 1)"
+              :key="car.paths"
+            >
+              <td>{{ getCarNumber(day.day - 1, car) }}</td>
+              <td>{{ isOwnCar(day, car) ? "собств." : "наемн." }}</td>
+              <td>{{ car.path.map(p => {return p.id}).join(', ') }}</td>
+              <td>{{ getTimeByWays(car) }}</td>
+              <td>{{ getDigitClock(car.sumTime) }}</td>
+              <td>{{ car.sumKM }}</td>
+              <td>{{ payForKM(car.sumKM, day, car) }}</td>
+              <td>{{ isOwnCar(day, car) ? 300 : 1500 }}</td>
+              <td>{{ payDriver(car.sumTime) }}</td>
+              <td>{{ shtrafSum(car) }}</td>
+              <td>{{ shtrafTime(car.sumTime, day, car) }}</td>
+              <td>{{ isOwnCar(day, car) ? 0 : 600 }}</td>
+              <td>{{ payForKM(car.sumKM, day, car) + (isOwnCar(day, car) ? 300 : 1500)
+                + +shtrafSum(car).split('= ')[1] + shtrafTime(car.sumTime, day, car)
+                + payDriver(car.sumTime) + (isOwnCar(day, car) ? 0 : 600) }}
+              </td>
+            </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td>{{ `P = ${day.paths.slice(0).map(p => p.sum).reduce((a, e) => { return a + e })}` }}</td>
+              <td>{{ `T = ${day.paths.slice(0).map(p => p.sumTime).reduce((a, e) => { return a + e })}` }}</td>
+              <td>{{ `L = ${day.paths.slice(0).map(p => p.sumKM).reduce((a, e) => { return a + e })}` }}</td>
+              <td></td>
+              <td></td>
+              <td>Последний рейс<br/>(не штрафуется):</td>
+              <td ref="total">{{ `${-day.paths.slice(0).map(p => shtrafSumByDay(p)).join(',').split(',').sort((a, b) => { return b - a })[0]}` }}</td>
+              <td ref="total">{{ `${-day.paths.slice(0).map(p => shtrafTime(p.sumTime, day, p)).reduce((a, b) => { return a + b })}` }}</td>
+              <td></td>
+              <td ref="total">{{ `${day.paths.slice(0).map(p => payForKM(p.sumKM, day, p) + (isOwnCar(day, p) ? 300 : 1500)
+                + (+shtrafSumForTotal(p)) + (shtrafTime(p.sumTime, day, p))
+                + payDriver(p.sumTime) + (isOwnCar(day, p) ? 0 : 600)).reduce((a, b) => { return a + b })}` }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        {{ day.day === 4 ? setTotal() : "" }}
+      </div>
+    </div>
+    <div class="row justify-center q-pa-lg text-h6">
+      Итого: {{ total }}
+    </div>
   </div>
 </template>
 
 <script>
 import Way from 'components/Way';
-const MAX_TIME = 605; // 8 часов разрешено, ограничим 11 с переработками
+// const MAX_TIME = 605; // 8 часов разрешено, ограничим 11 с переработками
 // const MIN_TIME = 360;
 const MAX_KM = 110;
 
@@ -51,7 +126,8 @@ export default {
     Way
   },
   props: {
-    week: Array
+    week: Array,
+    MAX_TIME: Number
   },
   data() {
     return {
@@ -73,6 +149,7 @@ export default {
         { name: 'km', label: 'Длина', field: 'km' },
         { name: 'time', label: 'Время', field: 'time' }
       ],
+      total: 0,
     }
   },
   async mounted() {
@@ -85,6 +162,24 @@ export default {
     }
   },
   methods: {
+    shtrafTime(time, day, car) {
+      return time < 360 ? this.isOwnCar(day, car) ? 300 : 500 : 0;
+    },
+    shtrafSum(car) {
+      const pays = car.path.map(p => p.sum < 90 ? (90 - p.sum) * 50 : 0);
+      return pays.join(' + ') + " = " + pays.reduce((a, e) => { return a + e });
+    },
+    shtrafSumForTotal(car) {
+      const shtr = car.path.map(p => p.sum < 90 ? (90 - p.sum) * 50 : 0).reduce((a, e) => { return a + e });
+      return shtr;
+    },
+    shtrafSumByDay(car) {
+      return car.path.map(p => p.sum < 90 ? (90 - p.sum) * 50 : 0);
+    },
+    getTimeByWays(car) {
+      const sums = car.path.map(p => p.sum);
+      return sums.length < 2 ? sums : sums.join(' + ') + " = " + car.sum;
+    },
     getCountedPath(paths) {
       let carNumber = 1;
       let countedPaths = [];
@@ -133,13 +228,14 @@ export default {
       if (wayByTime.length < 2) {
         return this.pushOnePath(paths, wayByTime);
       }
-      const pairWithZeroElement = wayByTime.slice(1).filter(w => w.time < MAX_TIME - 30 - wayByTime[0].time)[0];
+      const pairWithZeroElement = wayByTime.slice(1).filter(w => w.time < this.MAX_TIME - 30 - wayByTime[0].time)[0];
       if (!pairWithZeroElement) {
         wayByTime = this.pushOnePath(paths, wayByTime);
       } else {
         let currPath = {
           sumKM: +wayByTime[0].bestSeqKM + +pairWithZeroElement.bestSeqKM,
           sumTime: wayByTime[0].time + 30 + pairWithZeroElement.time,
+          sum: wayByTime[0].sum + pairWithZeroElement.sum,
           path: [wayByTime[0], pairWithZeroElement]
         };
         wayByTime.splice(wayByTime.indexOf(pairWithZeroElement), 1);
@@ -149,11 +245,12 @@ export default {
       return await this.getNextPath(paths, wayByTime);
     },
     getPathArray(currPath, wayByTime) {
-      const pairWithZeroElement = wayByTime.filter(w => w.time < MAX_TIME - 30 - currPath.sumTime)[0];
+      const pairWithZeroElement = wayByTime.filter(w => w.time < this.MAX_TIME - 30 - currPath.sumTime)[0];
       if (pairWithZeroElement && currPath.sumKM + +pairWithZeroElement.bestSeqKM < MAX_KM) {
         currPath.path.push(pairWithZeroElement);
         currPath.sumKM += +pairWithZeroElement.bestSeqKM,
         currPath.sumTime += 30 + pairWithZeroElement.time,
+        currPath.sum += pairWithZeroElement.sum,
         wayByTime.splice(wayByTime.indexOf(pairWithZeroElement), 1);
         wayByTime = this.getPathArray(currPath, wayByTime);
       }
@@ -163,10 +260,54 @@ export default {
       paths.push({
         sumKM: +wayByTime[0].bestSeqKM,
         sumTime: wayByTime[0].time,
+        sum: wayByTime[0].sum,
         path: [wayByTime[0]]
       });
       return wayByTime.slice(1);
+    },
+    carsByDay(day) {
+      return this.paths[day].paths;
+    },
+    getCarNumber(day, car) {
+      return this.carsByDay(day).indexOf(car) + 1;
+    },
+    isOwnCar(day, car) {
+      return this.getCarNumber(day.day - 1, car) < 7;
+    },
+    payForKM(sumKM, day, car) {
+      return this.isOwnCar(day, car) ? sumKM * 15 : sumKM * 30;
+    },
+    payDriver(sumTime) {
+      return sumTime > 480 ? (sumTime - 480) * 5 : 0;
+    },
+    setTotal() {
+      this.$forceUpdate;
+      this.$nextTick(() => {
+        if (this.$refs.total) {
+          this.total = this.$refs.total.map(el => { return +el.innerText }).reduce((a, e) => { return a + e });
+          console.log('total', this.total);
+          
+        }
+      })
+    }
+  },
+}
+</script>
+
+<style lang="scss">
+.print {
+  &__table-cars-label {
+    border: 2px solid black;
+    border-bottom: none;
+  }
+
+  &__table-cars {
+    border: 2px solid black;
+    border-collapse: collapse;
+
+    th, td {
+      border: 1px solid black;
     }
   }
 }
-</script>
+</style>
