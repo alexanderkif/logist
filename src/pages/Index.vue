@@ -1,5 +1,13 @@
 <template>
   <q-page class="flex flex-center q-pb-lg">
+    <div class="row full-width justify-center items-center q-mt-lg">
+      <div class="text-center text-primary">
+        Скачайте пример CSV файла, заполните нужными данными и сохраните.<br />
+        Далее кликните Загрузить CSV файл и выберите сохраненный файл.<br />
+        Ожидайте, пока идет расчет маршрутов.<br />
+        Расчет выполняется один раз. Для нового расчета обновите страницу.
+      </div>
+    </div>
     <div class="row justify-center items-center q-mt-lg">
       <div class="col">
         <q-input
@@ -30,7 +38,7 @@
         <a href="logist.csv" class="text-primary">Скачать пример файла logist.csv</a>
       </div>
     </div>
-    <div class="row full-width justify-center">
+    <div v-if="orders.length" class="row full-width justify-center">
       <q-table
         title="Координаты магазинов"
         :data="shops"
@@ -341,7 +349,7 @@ export default {
             tue: {p: arr[4], m: arr[5], n: arr[6]},
             wed: {p: arr[7], m: arr[8], n: arr[9]},
             thu: {p: arr[10], m: arr[11], n: arr[12]},
-            fri: {p: arr[13], m: arr[12], n: arr[13]},
+            fri: {p: arr[13], m: arr[14], n: arr[15]},
           };
         });
     },
